@@ -1,0 +1,70 @@
+"""Serve or save an interactive demo for a trained SAC model."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from stable_baselines3 import SAC
+
+from group11_balance.sim.task import TASKS, TASK_BALANCE, TASK_VELOCITY, validate_target_wheel_velocity
+from group11_balance.visualization.policy_web_demo import serve_policy_demo
+from group11_balance.visualization.rollout_html import write_policy_rollout_html
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", default="outputs/models/group11_sac.zip")
+    parser.add_argument("--level", choices=["easy", "medium", "hard"], default="easy")
+    parser.add_argument("--task", choices=TASKS, default=TASK_BALANCE)
+    parser.add_argument("--target-wheel-velocity", dest="target_wheel_velocity", type=float, default=0.0)
+    parser.add_argument("--action-limit", dest="action_limit", type=float, default=8000.0)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8850)
+    parser.add_argument("--save-html", dest="save_html", default=None)
+    parser.add_argument("--rollout-steps", dest="rollout_steps", type=int, default=1000)
+    parser.add_argument("--rollout-fps", dest="rollout_fps", type=int, default=50)
+    parser.add_argument("--no-serve", action="store_true")
+    args = parser.parse_args()
+
+    if not Path(args.model).exists():
+        raise SystemExit(f"model not found: {args.model}")
+    if args.task == TASK_VELOCITY:
+        validate_target_wheel_velocity(args.target_wheel_velocity)
+    model = SAC.load(args.model, device="cpu")
+
+    if args.save_html:
+        output = write_policy_rollout_html(
+            model,
+            output=args.save_html,
+            algorithm_name="SAC",
+            level=args.level,
+            seed=args.seed,
+            task=args.task,
+            target_wheel_velocity=args.target_wheel_velocity,
+            action_limit=args.action_limit,
+            steps=args.rollout_steps,
+            fps=args.rollout_fps,
+        )
+        print(f"Saved SAC rollout HTML to {output}")
+
+    if args.no_serve:
+        return
+
+    serve_policy_demo(
+        model=model,
+        algorithm_name="SAC",
+        level=args.level,
+        seed=args.seed,
+        host=args.host,
+        port=args.port,
+        task=args.task,
+        target_wheel_velocity=args.target_wheel_velocity,
+        action_limit=args.action_limit,
+    )
+
+
+if __name__ == "__main__":
+    main()
+
