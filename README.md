@@ -1125,3 +1125,9 @@ MPLCONFIGDIR=.mpl-cache UV_CACHE_DIR=.uv-cache uv run python -m group11_balance.
   --level easy \
   --port 8855
 ```
+## 可视化效果图如下
+
+#### 平衡站立
+![平衡](reports/group11_technical_report/figures/balancing.png)
+#### 匀速运动
+![匀速运动](reports/group11_technical_report/figures/velocity.png)
